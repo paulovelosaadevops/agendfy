@@ -9,13 +9,14 @@ import { EnhancedStatCard } from "@/components/dashboard/enhanced-stat-card"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Users, Search, Calendar, Phone, TrendingUp, UserCircle } from "lucide-react"
+import { Users, Search, Calendar, Phone, TrendingUp, UserCircle, AlertCircle } from "lucide-react"
 import { getClientsByProfessional } from "@/lib/firestore/clients"
 import type { Client } from "@/types/firestore"
 import { formatDate } from "@/lib/utils/format"
 import { PlanLimitBanner } from "@/components/plan-limit-banner"
-import { FREE_PLAN_LIMITS, isPremiumPlan, canAddMore } from "@/lib/plan-limits"
+import { FREE_PLAN_LIMITS, hasPremiumAccess } from "@/lib/plan-limits"
 import { UpgradePromptModal } from "@/components/dashboard/upgrade-prompt-modal"
+import { cn } from "@/lib/utils"
 
 function ClientsContent() {
   const { user } = useAuth()
@@ -26,8 +27,10 @@ function ClientsContent() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   const userPlan = user?.subscriptionStatus || "free"
-  const isFreePlan = !isPremiumPlan(userPlan)
-  const canAddClient = canAddMore(clients.length, FREE_PLAN_LIMITS.clients, userPlan)
+  const hasPremium = hasPremiumAccess(userPlan, user?.trial?.active)
+  const isFreePlan = !hasPremium
+  const hasExceededLimit = !hasPremium && clients.length > FREE_PLAN_LIMITS.clients
+  const displayableClients = hasExceededLimit ? clients.slice(0, FREE_PLAN_LIMITS.clients) : clients
 
   useEffect(() => {
     if (user?.uid) {
@@ -37,15 +40,15 @@ function ClientsContent() {
 
   useEffect(() => {
     if (searchTerm) {
-      const filtered = clients.filter(
+      const filtered = displayableClients.filter(
         (client) =>
           client.name.toLowerCase().includes(searchTerm.toLowerCase()) || client.whatsapp.includes(searchTerm),
       )
       setFilteredClients(filtered)
     } else {
-      setFilteredClients(clients)
+      setFilteredClients(displayableClients)
     }
-  }, [searchTerm, clients])
+  }, [searchTerm, displayableClients])
 
   async function loadClients() {
     if (!user?.uid) return
@@ -90,8 +93,8 @@ function ClientsContent() {
       <UpgradePromptModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        feature="cadastrar mais clientes"
-        description={`Você atingiu o limite de ${FREE_PLAN_LIMITS.clients} clientes do plano gratuito. Faça upgrade para Premium e tenha clientes ilimitados!`}
+        feature="visualizar todos os clientes"
+        description={`Você possui ${clients.length} clientes, mas o plano gratuito permite visualizar apenas ${FREE_PLAN_LIMITS.clients}. Faça upgrade para Premium e tenha acesso completo à sua base de clientes!`}
       />
 
       <PageHeaderEnhanced
@@ -106,6 +109,24 @@ function ClientsContent() {
           ) : null
         }
       />
+
+      {hasExceededLimit && (
+        <Card className="bg-warning/10 border-warning/30 p-4 shadow-lg">
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-warning/20 rounded-lg">
+              <AlertCircle className="w-6 h-6 text-warning" />
+            </div>
+            <div className="flex-1 space-y-2">
+              <h3 className="font-semibold text-foreground">Limite de clientes excedido</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Você possui {clients.length} clientes, mas o plano gratuito permite visualizar apenas os primeiros{" "}
+                {FREE_PLAN_LIMITS.clients}. Todos os dados estão preservados e você pode fazer upgrade a qualquer
+                momento para acessá-los.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {isFreePlan && (
         <PlanLimitBanner
@@ -172,10 +193,13 @@ function ClientsContent() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {filteredClients.map((client) => (
+          {filteredClients.map((client, index) => (
             <Card
               key={client.id}
-              className="group bg-card-interactive p-6 shadow-md hover:shadow-xl transition-all duration-300"
+              className={cn(
+                "group bg-card-interactive p-6 shadow-md hover:shadow-xl transition-all duration-300",
+                index >= FREE_PLAN_LIMITS.clients && !hasPremium && "opacity-50",
+              )}
             >
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors">

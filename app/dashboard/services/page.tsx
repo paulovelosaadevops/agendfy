@@ -28,7 +28,7 @@ import { ProtectedRoute } from "@/components/protected-route"
 import { PageHeaderEnhanced } from "@/components/dashboard/page-header-enhanced"
 import { EnhancedStatCard } from "@/components/dashboard/enhanced-stat-card"
 import { PlanLimitBanner } from "@/components/plan-limit-banner"
-import { FREE_PLAN_LIMITS, isPremiumPlan, canAddMore } from "@/lib/plan-limits"
+import { FREE_PLAN_LIMITS, hasPremiumAccess } from "@/lib/plan-limits"
 import { cn } from "@/lib/utils"
 import { userMessages, getFriendlyErrorMessage } from "@/lib/user-messages"
 import { ToastMessage } from "@/components/ui/toast-message"
@@ -51,8 +51,10 @@ function ServicesContent() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   const userPlan = user?.subscriptionStatus || "free"
-  const isFreePlan = !isPremiumPlan(userPlan)
-  const canAddService = canAddMore(services.length, FREE_PLAN_LIMITS.services, userPlan)
+  const hasPremium = hasPremiumAccess(userPlan, user?.trial?.active)
+  const isFreePlan = !hasPremium
+  const activeServicesCount = services.filter((s) => s.status === "active").length
+  const canAddService = hasPremium || activeServicesCount < FREE_PLAN_LIMITS.services
 
   useEffect(() => {
     if (user?.uid) {
@@ -182,7 +184,7 @@ function ServicesContent() {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         feature="adicionar mais serviços"
-        description={`Você atingiu o limite de ${FREE_PLAN_LIMITS.services} serviços do plano gratuito. Faça upgrade para Premium e cadastre serviços ilimitados!`}
+        description={`Você atingiu o limite de ${FREE_PLAN_LIMITS.services} serviços ativos do plano gratuito. Faça upgrade para Premium e cadastre serviços ilimitados!`}
       />
 
       <PageHeaderEnhanced
@@ -326,10 +328,10 @@ function ServicesContent() {
 
       {isFreePlan && (
         <PlanLimitBanner
-          currentCount={services.length}
+          currentCount={activeServicesCount}
           maxCount={FREE_PLAN_LIMITS.services}
-          resourceName="serviço"
-          resourceNamePlural="serviços"
+          resourceName="serviço ativo"
+          resourceNamePlural="serviços ativos"
         />
       )}
 

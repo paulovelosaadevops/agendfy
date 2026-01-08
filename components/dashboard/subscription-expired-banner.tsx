@@ -52,11 +52,11 @@ export function SubscriptionExpiredBanner() {
     }
   }
 
-  if (
-    user?.role !== "professional" ||
-    user?.subscriptionStatus === "premium" ||
-    user?.subscriptionStatus === "premium_trial"
-  ) {
+  const isPremium = user?.subscriptionStatus === "premium"
+  const isTrialActive = user?.subscriptionStatus === "premium_trial" && user?.trial?.active
+  const shouldShowBanner = user?.role === "professional" && !isPremium && !isTrialActive
+
+  if (!shouldShowBanner) {
     return null
   }
 

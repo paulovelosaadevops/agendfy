@@ -2,9 +2,9 @@ import type { User } from "@/types/auth"
 
 export const PLAN_LIMITS = {
   free: {
-    appointments: 10,
+    appointments: 30,
     services: 3,
-    clients: 5,
+    clients: 15,
     features: {
       financial: false,
       analytics: false,
@@ -34,7 +34,15 @@ export const PLAN_LIMITS = {
 }
 
 export function getPlanLimits(user: User | null) {
-  const status = user?.subscriptionStatus || "free"
+  if (!user) return PLAN_LIMITS.free
+
+  const status = user.subscriptionStatus || "free"
+
+  // If premium_trial but trial is not active, use free plan limits
+  if (status === "premium_trial" && !user.trial?.active) {
+    return PLAN_LIMITS.free
+  }
+
   return PLAN_LIMITS[status] || PLAN_LIMITS.free
 }
 

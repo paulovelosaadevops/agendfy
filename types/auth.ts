@@ -7,6 +7,14 @@ export interface TrialInfo {
   endsAt: Date
 }
 
+export interface PlanTransition {
+  lastCheck?: string
+  servicesDisabled?: number
+  totalClients?: number
+  totalAppointments?: number
+  notified?: boolean
+}
+
 import type { StripeSubscription } from "./stripe"
 
 export interface User {
@@ -21,6 +29,7 @@ export interface User {
   trial?: TrialInfo
   subscriptionStatus?: SubscriptionStatus
   subscription?: StripeSubscription
+  planTransition?: PlanTransition
 }
 
 export interface AuthContextType {

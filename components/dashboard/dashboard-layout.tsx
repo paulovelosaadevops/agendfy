@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { Separator } from "@/components/ui/separator"
 import { TrialStatusBanner } from "@/components/dashboard/trial-status-banner"
+import { ExcessResourcesBanner } from "@/components/dashboard/excess-resources-banner"
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { logout, user } = useAuth()
@@ -60,6 +61,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 md:p-6 bg-background min-h-screen">
           {user?.role === "professional" && <TrialStatusBanner />}
+          {user?.role === "professional" && <ExcessResourcesBanner />}
           {children}
         </main>
       </SidebarInset>

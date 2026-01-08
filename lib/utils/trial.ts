@@ -1,6 +1,7 @@
 import type { User } from "@/types/auth"
 import { doc, updateDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { handleTrialExpirationResources } from "./plan-transition"
 
 /**
  * Verifica se o trial do usuário está ativo
@@ -38,11 +39,18 @@ export async function checkAndUpdateTrialStatus(user: User | null): Promise<void
   const endsAt = new Date(user.trial.endsAt)
 
   // Se o trial expirou mas ainda está marcado como ativo, atualizar
-  if (user.trial.active && now >= endsAt) {
+  if (user.trial.active && now >= endsAt && user.subscriptionStatus !== "premium") {
     try {
       const userRef = doc(db, "users", user.uid)
       await updateDoc(userRef, {
+        subscriptionStatus: "free",
         "trial.active": false,
+      })
+
+      await handleTrialExpirationResources(user.uid, {
+        ...user,
+        subscriptionStatus: "free",
+        trial: { ...user.trial, active: false },
       })
     } catch (error) {
       console.error("Error updating trial status:", error)

@@ -5,20 +5,38 @@ export const FREE_PLAN_LIMITS = {
   appointmentsPerMonth: 30,
 } as const
 
-export const PREMIUM_PLANS = ["premium", "premium_trial"] as const
+export const PREMIUM_PLANS = ["premium"] as const
 
 export function isPremiumPlan(status: string | undefined): boolean {
   if (!status) return false
-  return status === "premium" || status === "premium_trial"
+  return status === "premium"
 }
 
-export function canAddMore(currentCount: number, limit: number, status: string | undefined): boolean {
-  if (isPremiumPlan(status)) return true
+export function hasPremiumAccess(status: string | undefined, trialActive?: boolean): boolean {
+  if (!status) return false
+  if (status === "premium") return true
+  // Only has premium access if status is premium_trial AND trial is still active
+  if (status === "premium_trial" && trialActive === true) return true
+  return false
+}
+
+export function canAddMore(
+  currentCount: number,
+  limit: number,
+  status: string | undefined,
+  trialActive?: boolean,
+): boolean {
+  if (hasPremiumAccess(status, trialActive)) return true
   return currentCount < limit
 }
 
-export function getRemainingCount(currentCount: number, limit: number, status: string | undefined): number {
-  if (isPremiumPlan(status)) return Number.POSITIVE_INFINITY
+export function getRemainingCount(
+  currentCount: number,
+  limit: number,
+  status: string | undefined,
+  trialActive?: boolean,
+): number {
+  if (hasPremiumAccess(status, trialActive)) return Number.POSITIVE_INFINITY
   return Math.max(0, limit - currentCount)
 }
 

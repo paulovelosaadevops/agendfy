@@ -50,7 +50,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { ProtectedRoute } from "@/components/protected-route"
 import { PageHeaderEnhanced } from "@/components/dashboard/page-header-enhanced"
 import { PlanLimitBanner } from "@/components/plan-limit-banner"
-import { FREE_PLAN_LIMITS, isPremiumPlan, canAddMore } from "@/lib/plan-limits"
+import { FREE_PLAN_LIMITS, hasPremiumAccess } from "@/lib/plan-limits"
 import { cn } from "@/lib/utils"
 import { userMessages, getFriendlyErrorMessage } from "@/lib/user-messages"
 import { ToastMessage } from "@/components/ui/toast-message"
@@ -107,8 +107,8 @@ function AgendaContent(): ReactElement {
   const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false)
 
   const userPlan = user?.subscriptionStatus || "free"
-  const isFreePlan = !isPremiumPlan(userPlan)
-  const canAddAppointment = canAddMore(monthlyCount, FREE_PLAN_LIMITS.appointmentsPerMonth, userPlan)
+  const hasPremium = hasPremiumAccess(userPlan, user?.trial?.active)
+  const canAddAppointment = hasPremium || monthlyCount < FREE_PLAN_LIMITS.appointmentsPerMonth
 
   useEffect(() => {
     if (user?.uid) {
@@ -897,7 +897,8 @@ function AgendaContent(): ReactElement {
         }
       />
 
-      {isFreePlan && (
+      {/* Conditionally render PlanLimitBanner, considering premium status */}
+      {!hasPremium && (
         <PlanLimitBanner
           currentCount={monthlyCount}
           maxCount={FREE_PLAN_LIMITS.appointmentsPerMonth}
@@ -908,7 +909,7 @@ function AgendaContent(): ReactElement {
 
       {/* Calendar View Selector */}
       <Card className="glass-effect p-4 shadow-lg">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-flex-row items-center justify-between gap-4">
           {/* View Tabs */}
           <div className="flex items-center gap-1 p-1 bg-secondary rounded-xl w-full sm:w-auto">
             <button
@@ -925,37 +926,37 @@ function AgendaContent(): ReactElement {
             </button>
 
             <button
-              onClick={() => !isFreePlan && setCalendarView("week")}
-              disabled={isFreePlan}
+              onClick={() => setCalendarView("week")}
+              disabled={!hasPremium}
               className={cn(
                 "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex-1 sm:flex-none justify-center relative",
                 calendarView === "week"
                   ? "bg-primary text-primary-foreground shadow-md"
-                  : isFreePlan
+                  : !hasPremium
                     ? "text-muted-foreground/50 cursor-not-allowed"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
               )}
             >
               <CalendarDays className="w-4 h-4" />
               <span>Semana</span>
-              {isFreePlan && <Crown className="w-3.5 h-3.5 text-amber-400 ml-1" />}
+              {!hasPremium && <Crown className="w-3.5 h-3.5 text-amber-400 ml-1" />}
             </button>
 
             <button
-              onClick={() => !isFreePlan && setCalendarView("month")}
-              disabled={isFreePlan}
+              onClick={() => setCalendarView("month")}
+              disabled={!hasPremium}
               className={cn(
                 "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex-1 sm:flex-none justify-center relative",
                 calendarView === "month"
                   ? "bg-primary text-primary-foreground shadow-md"
-                  : isFreePlan
+                  : !hasPremium
                     ? "text-muted-foreground/50 cursor-not-allowed"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
               )}
             >
               <CalendarRange className="w-4 h-4" />
               <span>Mês</span>
-              {isFreePlan && <Crown className="w-3.5 h-3.5 text-amber-400 ml-1" />}
+              {!hasPremium && <Crown className="w-3.5 h-3.5 text-amber-400 ml-1" />}
             </button>
           </div>
 
@@ -1135,7 +1136,8 @@ function AgendaContent(): ReactElement {
         </>
       )}
 
-      {isFreePlan && (
+      {/* Show upgrade banner only if not premium */}
+      {!hasPremium && (
         <Card className="bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border-purple-500/20 p-6 shadow-lg">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="p-3 bg-primary/10 rounded-xl">
