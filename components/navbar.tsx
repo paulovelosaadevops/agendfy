@@ -28,9 +28,8 @@ export function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-primary/10 bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative w-[400px] h-[125px] group-hover:scale-105 transition-transform duration-300">
+          <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
+            <div className="relative w-[140px] h-[44px] sm:w-[180px] sm:h-[56px] md:w-[220px] md:h-[69px] lg:w-[280px] lg:h-[88px] group-hover:scale-105 transition-transform duration-300">
               <Image src="/agendfy-logo.png" alt="AgendFy" fill className="object-contain" priority />
             </div>
           </Link>
@@ -97,14 +96,14 @@ export function Navbar() {
             )}
           </div>
 
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 md:hidden flex-shrink-0">
             <ThemeToggle />
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="p-2 hover:bg-accent rounded-xl transition-colors"
               aria-label="Menu"
             >
-              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
